@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  overv:
+    image: overv/openstreetmap-tile-server:latest
+    restart: always
+    ports:
+      - "${OSM_PORT:-8080}:80"
+    volumes:
+      - ./overv/database:/var/lib/postgresql/15/main
+      - ./overv/style:/data/style
+    command: run
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  osrm-backend:
+    image: osrm/osrm-backend:latest
+    restart: always
+    ports:
+      - "${OSRM_PORT:-5000}:5000"
+    volumes:
+      - ./overv/data/turkmenistan.osm.pbf:/data/turkmenistan.osm.pbf
+    command: >
+      /bin/bash -c "
+      if [ ! -f /data/turkmenistan.osrm ]; then
+        osrm-extract -p /opt/car.lua /data/turkmenistan.osm.pbf &&
+        osrm-partition /data/turkmenistan.osrm &&
+        osrm-customize /data/turkmenistan.osrm;
+      fi &&
+      osrm-routed --algorithm mld /data/turkmenistan.osrm"
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  nominatim:
+    image: mediagis/nominatim:4.3
+    restart: always
+    volumes:
+      - nominatim-data:/var/lib/postgresql/12/main
+      - ./overv/data:/data
+    ports:
+      - "${NOMINATIMUS_PORT:-7070}:8080"
+    environment:
+      PBF_PATH: /data/turkmenistan.osm.pbf
+      NOMINATIM_THREADS: 4
+      NOMINATIM_IMPORT: "true"
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+volumes:
+  nominatim-data:
+
+networks:
+  app-network:
+    driver: bridge

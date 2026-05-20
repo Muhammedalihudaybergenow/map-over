@@ -21,15 +21,15 @@ services:
     ports:
       - "${OSRM_PORT:-5000}:5000"
     volumes:
-      - ./overv/data/turkmenistan.osm.pbf:/data/turkmenistan.osm.pbf
+      - ./overv/data/map.osm.pbf:/data/map.osm.pbf
     command: >
       /bin/bash -c "
-      if [ ! -f /data/turkmenistan.osrm ]; then
-        osrm-extract -p /opt/car.lua /data/turkmenistan.osm.pbf &&
-        osrm-partition /data/turkmenistan.osrm &&
-        osrm-customize /data/turkmenistan.osrm;
+      if [ ! -f /data/map.osrm ]; then
+        osrm-extract -p /opt/car.lua /data/map.osm.pbf &&
+        osrm-partition /data/map.osrm &&
+        osrm-customize /data/map.osrm;
       fi &&
-      osrm-routed --algorithm mld /data/turkmenistan.osrm"
+      osrm-routed --algorithm mld /data/map.osrm"
     env_file:
       - .env
     networks:
@@ -44,7 +44,7 @@ services:
     ports:
       - "${NOMINATIMUS_PORT:-7070}:8080"
     environment:
-      PBF_PATH: /data/turkmenistan.osm.pbf
+      PBF_PATH: /data/map.osm.pbf
       NOMINATIM_THREADS: 4
       NOMINATIM_IMPORT: "true"
     env_file:
